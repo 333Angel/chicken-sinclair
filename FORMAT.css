@@ -37,3 +37,15 @@ html, body {
     transform: translate(-50%);
     transition: left 0.5s linear, bottom 0.3s ease-out;
 }
+
+#soundToggle {
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  font-size: 32px;
+  cursor: pointer;
+  user-select: none;
+  z-index: 9999;
+}
+
+

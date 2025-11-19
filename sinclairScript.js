@@ -1,4 +1,4 @@
-const character = document.getElementById("character");
+const sinclair = document.getElementById("sinclair");
 
 //random
 const randBetween = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -16,6 +16,31 @@ let y = 0;
 let vx = 0;  // horizontal velocity
 let vy = 0;  // vertical velocity
 
+let audioUnlocked = false;
+let soundEnabled = false; // starts muted
+
+const soundButton = document.getElementById("soundToggle");
+
+function unlockAudio() {
+  if (!audioUnlocked) {
+    const a = new Audio();
+    a.play().catch(() => {});
+    audioUnlocked = true;
+  }
+}
+
+function toggleSound() {
+  unlockAudio();
+  soundEnabled = !soundEnabled;
+  soundButton.textContent = soundEnabled ? "🔊" : "🔇";
+}
+
+soundButton.addEventListener("click", toggleSound);
+
+window.addEventListener("mousedown", unlockAudio, { once: true });
+window.addEventListener("touchstart", unlockAudio, { once: true });
+
+
 const gravity = 0.6;       // how fast character falls
 const friction = 0.95;     // sliding (lower means slippery)
 const jumpStrength = randBetween(5, 20);
@@ -24,6 +49,42 @@ const moveStrength = 4;
 // Character size
 const charWidth = 150;
 const charHeight = 150;
+
+const sinclairSoundFiles = [
+  'chickensinclairnoise1.mp3',
+  'chickensinclairnoise2.mp3',
+  'chickensinclairnoise3.mp3'
+];
+
+const sinclairAudio = new Audio();
+sinclairAudio.preload = 'auto';
+
+function getRandomSoundFile() {
+  return sinclairSoundFiles[
+    Math.floor(Math.random() * sinclairSoundFiles.length)
+  ];
+}
+
+function playSinclairAudio() {
+  try {
+    const src = getRandomSoundFile();
+    console.log("Playing:", src);
+
+    // Prevent cache locking the sound
+    sinclairAudio.src = src + '?v=' + Math.random();
+
+    sinclairAudio.currentTime = 0;
+
+    const p = sinclairAudio.play();
+    if (p && p.catch) p.catch(err => {
+      console.debug("Audio play blocked or failed:", err);
+    });
+
+  } catch (err) {
+    console.debug("Audio play error", err);
+  }
+}
+
 
 function randomAction() {
   const actions = ["left", "right", "jump", "jumpLeft", "jumpRight", "idle"];
@@ -105,20 +166,20 @@ function update() {
 
   // Set sprite depending on movement
   if (isGrabbed) {
-    character.style.backgroundImage = `url(${pickUp})`
+    sinclair.style.backgroundImage = `url(${pickUp})`
     vy = 0;
   }
   else if (vx > 1) {
-    character.style.backgroundImage = `url(${moveRightSprite})`;
+    sinclair.style.backgroundImage = `url(${moveRightSprite})`;
   } else if (vx < -1) {
-    character.style.backgroundImage = `url(${moveLeftSprite})`;
+    sinclair.style.backgroundImage = `url(${moveLeftSprite})`;
   } else {
-    character.style.backgroundImage = `url(${idleSprite})`;
+    sinclair.style.backgroundImage = `url(${idleSprite})`;
   }
 
   // Update character's CSS position
-  character.style.left = x + "px";
-  character.style.bottom = y + "px";
+  sinclair.style.left = x + "px";
+  sinclair.style.bottom = y + "px";
 
   requestAnimationFrame(update);
 }
@@ -135,7 +196,7 @@ let mouseVY = 0;
 function startGrab(clientX, clientY) {
     isGrabbed = true;
 
-    character.style.backgroundImage = `url(${pickUp})`;
+    sinclair.style.backgroundImage = `url(${pickUp})`;
 
     grabOffsetX = clientX - x;
     grabOffsetY = window.innerHeight - clientY - y;
@@ -147,13 +208,19 @@ function startGrab(clientX, clientY) {
     lastMouseY = clientY;
 }
 
-character.addEventListener("mousedown", e =>{
+sinclair.addEventListener("mousedown", e =>{
     startGrab(e.clientX, e.clientY);
 });
 
-character.addEventListener("touchstart", () => {
-    const touch = e.touches[0];
-    startGrab(touch.clientX, touch.clientY);
+// Play sound on mouse clicks as well
+sinclair.addEventListener("click", () => {
+  playSinclairAudio();
+});
+
+sinclair.addEventListener("touchstart", (e) => {
+  const touch = e.touches[0];
+  startGrab(touch.clientX, touch.clientY);
+  playSinclairAudio();
 });
 
 function moveGrab(clientX, clientY) {
@@ -199,5 +266,22 @@ window.addEventListener("mouseup", endGrab);
 
 window.addEventListener("touchend", endGrab);
 
+function startSinclairNoiseLoop() {
+  function loop() {
+    // Only play sound if allowed
+    if (audioUnlocked && soundEnabled) {
+      playSinclairAudio();
+    }
+
+    // Random delay between 3s and 10s (customize these!)
+    const next = 3000 + Math.random() * 7000;
+    setTimeout(loop, next);
+  }
+
+  // Start first loop
+  loop();
+}
+
+startSinclairNoiseLoop();
 
 update();  // start animation
